@@ -16,9 +16,33 @@ const userSchema = new Schema(
             type: String,
             required: true
         },
+        userAge: {
+            type: String,
+        },
+        Gender: {
+            type: String,
+        },
+        Speciality: {
+            type: String,
+        },
+        phoneNumber: {
+            type: String,
+        },
+        profileImage: {
+            type: String,
+        },
+        userDescription: {
+            type: String,
+        },
+        adminId:{
+            type: String,
+        },
+        adminName:{
+            type: String,
+        },
         userRole: {
             type: String,
-            default: "patient",
+            default: "admin",
             required: true,
             enum: ["doctor", "admin","patient","nurse"]
         },
