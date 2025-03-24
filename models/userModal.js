@@ -34,15 +34,16 @@ const userSchema = new Schema(
         userDescription: {
             type: String,
         },
-        adminId:{
-            type: String,
-        },
-        adminName:{
-            type: String,
-        },
+        // ,
+        // adminId:{
+        //     type: String,
+        // },
+        // adminName:{
+        //     type: String,
+        // },
         userRole: {
             type: String,
-            default: "admin",
+            default: "patient",
             required: true,
             enum: ["doctor", "admin","patient","nurse"]
         },

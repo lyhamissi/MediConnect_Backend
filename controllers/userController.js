@@ -14,48 +14,69 @@ cloudinary.config({
 export default cloudinary;
 export const Register = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: "Profile Image Required" });
+      const { userName, userEmail, userPassword, userRole, userAge, Gender, Speciality, phoneNumber, userDescription } = req.body;
+  
+      // Check if email already exists
+      const existingUser = await User.findOne({ userEmail });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+  
+      const hashedPassword = await bcrypt.hash(userPassword, 10);
+  
+      // Create user object with required fields
+      const userData = {
+        userName,
+        userEmail,
+        userPassword: hashedPassword,
+      };
+  
+      // If admin is registering (i.e., additional fields are present)
+      if (userRole || userAge || Gender || Speciality || phoneNumber || userDescription) {
+        userData.userRole = userRole;
+        userData.userAge = userAge;
+        userData.Gender = Gender;
+        userData.Speciality = Speciality;
+        userData.phoneNumber = phoneNumber;
+        userData.userDescription = userDescription;
+  
+        // If admin also uploads a profile image
+        if (req.file) {
+          const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
+            folder: "Doctor_profileImages",
+          });
+          userData.profileImage = cloudinaryResult.secure_url;
         }
-        const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
-            folder: "Doctor_profileImages"
-        })
-        console.log("Cloudinary Response: ", cloudinaryResult);
-
-        const { userName, userEmail, userPassword, userRole, userAge, Gender, Speciality, phoneNumber, userDescription } = req.body;
-        //check if email already exists
-        const existingUser = await User.findOne({ userEmail });
-        if (existingUser) {
-            return res.status(400).json({ message: "Email already exists" });
-        }
-        //hash Password
-        const hashedPassword = await bcrypt.hash(userPassword, 10);
-        const user = new User({ userName, userEmail, userPassword: hashedPassword, userRole, userAge, Gender, Speciality, phoneNumber, userDescription, profileImage: cloudinaryResult.secure_url });
-
-        user.token.accessToken = generateAccessToken(user);
-        await user.save();
-        res.status(201).json({
-            message: "Account created successfull !",
-            user: {
-                _id: user._id,
-                userName: user.userName,
-                userEmail: user.userEmail,
-                userRole: user.userRole,
-                userAge: user.userAge,
-                Gender: user.Gender,
-                Speciality: user.Speciality,
-                phoneNumber: user.phoneNumber,
-                userDescription: user.userDescription,
-                token: {
-                    accessToken: user.token.accessToken,
-                },
-            },
-        });
+      }
+  
+      const user = new User(userData);
+      user.token.accessToken = generateAccessToken(user);
+      await user.save();
+  
+      res.status(201).json({
+        message: "Account created successfully!",
+        user: {
+          _id: user._id,
+          userName: user.userName,
+          userEmail: user.userEmail,
+          userRole: user.userRole,
+          userAge: user.userAge,
+          Gender: user.Gender,
+          Speciality: user.Speciality,
+          phoneNumber: user.phoneNumber,
+          userDescription: user.userDescription,
+          profileImage: user.profileImage,
+          token: {
+            accessToken: user.token.accessToken,
+          },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error", error: error.message });
     }
-    catch (error) {
-        res.status(500).json({ message: "Internal server Error! Failed to register User", error: error.message });
-    }
-};
+  };
+  
 export const Login = async (req, res) => {
     try {
         const { userEmail, userPassword } = req.body;
