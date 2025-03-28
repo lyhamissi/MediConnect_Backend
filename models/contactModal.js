@@ -19,6 +19,9 @@ const contactSchema = new Schema({
         type: String,
         default: 'pending'
     },
+    replyMessage:{
+        type: String,
+    },
     createdAt: {
         type: Date,
         default: Date.now

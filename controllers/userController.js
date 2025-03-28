@@ -14,69 +14,69 @@ cloudinary.config({
 export default cloudinary;
 export const Register = async (req, res) => {
     try {
-      const { userName, userEmail, userPassword, userRole, userAge, Gender, Speciality, phoneNumber, userDescription } = req.body;
-  
-      // Check if email already exists
-      const existingUser = await User.findOne({ userEmail });
-      if (existingUser) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-  
-      const hashedPassword = await bcrypt.hash(userPassword, 10);
-  
-      // Create user object with required fields
-      const userData = {
-        userName,
-        userEmail,
-        userPassword: hashedPassword,
-      };
-  
-      // If admin is registering (i.e., additional fields are present)
-      if (userRole || userAge || Gender || Speciality || phoneNumber || userDescription) {
-        userData.userRole = userRole;
-        userData.userAge = userAge;
-        userData.Gender = Gender;
-        userData.Speciality = Speciality;
-        userData.phoneNumber = phoneNumber;
-        userData.userDescription = userDescription;
-  
-        // If admin also uploads a profile image
-        if (req.file) {
-          const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
-            folder: "Doctor_profileImages",
-          });
-          userData.profileImage = cloudinaryResult.secure_url;
+        const { userName, userEmail, userPassword, userRole, userAge, Gender, Speciality, phoneNumber, userDescription } = req.body;
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ userEmail });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already exists" });
         }
-      }
-  
-      const user = new User(userData);
-      user.token.accessToken = generateAccessToken(user);
-      await user.save();
-  
-      res.status(201).json({
-        message: "Account created successfully!",
-        user: {
-          _id: user._id,
-          userName: user.userName,
-          userEmail: user.userEmail,
-          userRole: user.userRole,
-          userAge: user.userAge,
-          Gender: user.Gender,
-          Speciality: user.Speciality,
-          phoneNumber: user.phoneNumber,
-          userDescription: user.userDescription,
-          profileImage: user.profileImage,
-          token: {
-            accessToken: user.token.accessToken,
-          },
-        },
-      });
+
+        const hashedPassword = await bcrypt.hash(userPassword, 10);
+
+        // Create user object with required fields
+        const userData = {
+            userName,
+            userEmail,
+            userPassword: hashedPassword,
+        };
+
+        // If admin is registering (i.e., additional fields are present)
+        if (userRole || userAge || Gender || Speciality || phoneNumber || userDescription) {
+            userData.userRole = userRole;
+            userData.userAge = userAge;
+            userData.Gender = Gender;
+            userData.Speciality = Speciality;
+            userData.phoneNumber = phoneNumber;
+            userData.userDescription = userDescription;
+
+            // If admin also uploads a profile image
+            if (req.file) {
+                const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
+                    folder: "Doctor_profileImages",
+                });
+                userData.profileImage = cloudinaryResult.secure_url;
+            }
+        }
+
+        const user = new User(userData);
+        user.token.accessToken = generateAccessToken(user);
+        await user.save();
+
+        res.status(201).json({
+            message: "Account created successfully!",
+            user: {
+                _id: user._id,
+                userName: user.userName,
+                userEmail: user.userEmail,
+                userRole: user.userRole,
+                userAge: user.userAge,
+                Gender: user.Gender,
+                Speciality: user.Speciality,
+                phoneNumber: user.phoneNumber,
+                userDescription: user.userDescription,
+                profileImage: user.profileImage,
+                token: {
+                    accessToken: user.token.accessToken,
+                },
+            },
+        });
     } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Internal server error", error: error.message });
+        console.log(error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
-  };
-  
+};
+
 export const Login = async (req, res) => {
     try {
         const { userEmail, userPassword } = req.body;
@@ -219,5 +219,35 @@ export const deleteDoctorById = async (req, res) => {
         res.status(200).json({ message: "Doctor deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Error deleting doctor", error: error.message });
+    }
+};
+export const updateUserProfile = async (req, res) => {
+    try {
+        const { userName, userEmail, userPassword } = req.body;
+        const userId = req.user.id; // Get user ID from authMiddleware
+
+        // Find the user by ID
+        let user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update name and email if provided
+        if (userName) user.userName = userName;
+        if (userEmail) user.userEmail = userEmail;
+
+        // If updating password, hash it before saving
+        if (userPassword) {
+            const salt = await bcrypt.genSalt(10);
+            user.userPassword = await bcrypt.hash(userPassword, salt);
+        }
+
+        // Save updated user
+        await user.save();
+
+        res.status(200).json({ message: "Profile updated successfully" });
+    } catch (error) {
+        console.error("Update Error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };
