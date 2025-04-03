@@ -8,7 +8,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 dotenv.config();
 
-const port = process.env.PORT || 10000
+const port = process.env.PORT || 10000;
 const db_user = process.env.DB_USER;
 const db_name = process.env.DB_NAME;
 const db_pass = process.env.DB_PASS;
